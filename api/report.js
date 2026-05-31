@@ -5,45 +5,57 @@ export default async function handler(req, res) {
   try {
 
     const {
-    dob,
-    tob,
-    city,
-    state,
-    country
+      dob,
+      tob,
+      city,
+      state,
+      country
     } = req.query;
-    // STEP 1
+
+    // Validate Inputs
+    if (!dob || !tob || !city || !state || !country) {
+
+      return res.status(400).json({
+        error: "Date of Birth, Time of Birth, City, State and Country are required."
+      });
+
+    }
+
+    // Create Location String
     const location =
-`${city}, ${state}, ${country}`;
+      `${city}, ${state}, ${country}`;
 
-const geo = await axios.get(
-    "https://nominatim.openstreetmap.org/search",
-        {
-            params: {
-            q: location,
-            format: "json",
-            limit: 1
-            },
-            headers: {
-            "User-Agent": "Astrology-App"
-            }
+    // Geocode Location
+    const geo = await axios.get(
+      "https://nominatim.openstreetmap.org/search",
+      {
+        params: {
+          q: location,
+          format: "json",
+          limit: 1
+        },
+        headers: {
+          "User-Agent": "EternalTandavAstrology/1.0"
         }
-        );
+      }
+    );
 
-        if (!geo.data.length) {
+    if (!geo.data || geo.data.length === 0) {
 
-        return res.status(400).json({
-            error: "Location not found"
-        });
+      return res.status(400).json({
+        error: "Location not found. Please enter a valid City, State and Country."
+      });
 
-        }
+    }
 
-        const latitude =
-        geo.data[0].lat;
+    const latitude = parseFloat(geo.data[0].lat);
+    const longitude = parseFloat(geo.data[0].lon);
 
-        const longitude =
-        geo.data[0].lon;
+    // Prokerala expects coordinates as a string
+    const coordinates =
+      `${latitude},${longitude}`;
 
-    // STEP 2
+    // Get Access Token
     const tokenResponse = await axios.post(
       "https://api.prokerala.com/token",
       new URLSearchParams({
@@ -62,56 +74,66 @@ const geo = await axios.get(
     const token =
       tokenResponse.data.access_token;
 
-    const datetime =
-      `${dob}T${tob}:00+05:30`;
-
     const headers = {
       Authorization: `Bearer ${token}`
     };
 
-    // Birth Details
-    const birthDetails =
-      await axios.get(
+    // India timezone
+    const datetime =
+      `${dob}T${tob}:00+05:30`;
+
+    // Shared parameters
+    const astrologyParams = {
+      datetime,
+      coordinates,
+      ayanamsa: 1
+    };
+
+    // Run all API calls in parallel
+    const [
+      birthDetails,
+      kaalSarp,
+      advanced
+    ] = await Promise.all([
+
+      axios.get(
         "https://api.prokerala.com/v2/astrology/birth-details",
         {
           headers,
-          params: {
-            datetime,
-            latitude,
-            longitude
-          }
+          params: astrologyParams
         }
-      );
+      ),
 
-    // Kaal Sarp
-    const kaalSarp =
-      await axios.get(
+      axios.get(
         "https://api.prokerala.com/v2/astrology/kaal-sarp-dosha",
         {
           headers,
-          params: {
-            datetime,
-            latitude,
-            longitude
-          }
+          params: astrologyParams
         }
-      );
+      ),
 
-    // Advanced Kundli
-    const advanced =
-      await axios.get(
+      axios.get(
         "https://api.prokerala.com/v2/astrology/kundli/advanced",
         {
           headers,
-          params: {
-            datetime,
-            latitude,
-            longitude
-          }
+          params: astrologyParams
         }
-      );
+      )
+
+    ]);
 
     res.status(200).json({
+
+      success: true,
+
+      location: {
+        city,
+        state,
+        country,
+        latitude,
+        longitude
+      },
+
       birthDetails:
         birthDetails.data,
 
@@ -120,14 +142,22 @@ const geo = await axios.get(
 
       advanced:
         advanced.data
+
     });
 
   } catch (err) {
 
+    console.error(err);
+
     res.status(500).json({
+
+      success: false,
+
       error:
         err.response?.data ||
-        err.message
+        err.message ||
+        "Unknown Error"
+
     });
 
   }

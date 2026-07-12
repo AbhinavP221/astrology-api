@@ -424,8 +424,7 @@ export default async function handler(req, res) {
         // ===========================
 
         const planets =
-            planetPosition.data?.data || [];
-
+    planetPosition.data?.data?.planet_position || [];
         // ===========================
         // Charts
         // ===========================

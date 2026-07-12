@@ -2,14 +2,11 @@ import axios from "axios";
 
 export default async function handler(req, res) {
 
-    // ----------------------------
+    // ===========================
     // CORS
-    // ----------------------------
+    // ===========================
 
-    res.setHeader(
-        "Access-Control-Allow-Origin",
-        "*"
-    );
+    res.setHeader("Access-Control-Allow-Origin", "*");
 
     res.setHeader(
         "Access-Control-Allow-Methods",
@@ -27,9 +24,9 @@ export default async function handler(req, res) {
 
     try {
 
-        // ----------------------------
+        // ===========================
         // User Inputs
-        // ----------------------------
+        // ===========================
 
         const {
             name,
@@ -49,15 +46,19 @@ export default async function handler(req, res) {
         ) {
 
             return res.status(400).json({
-                success:false,
-                error:"Please enter all required fields."
+
+                success: false,
+
+                error:
+                    "Please enter Date, Time, City, State and Country."
+
             });
 
         }
 
-        // ----------------------------
-        // Geocode
-        // ----------------------------
+        // ===========================
+        // Geocoding
+        // ===========================
 
         const location =
             `${city}, ${state}, ${country}`;
@@ -69,30 +70,38 @@ export default async function handler(req, res) {
 
                 {
 
-                    params:{
-                        q:location,
-                        format:"json",
-                        limit:1
+                    params: {
+
+                        q: location,
+
+                        format: "json",
+
+                        limit: 1
+
                     },
 
-                    headers:{
-                        "User-Agent":"Astronetrika/1.0"
+                    headers: {
+
+                        "User-Agent":
+                        "Astronetrika/1.0"
+
                     }
 
                 }
 
             );
 
-        if(
+        if (
             !geo.data ||
-            geo.data.length===0
-        ){
+            geo.data.length === 0
+        ) {
 
             return res.status(400).json({
 
-                success:false,
+                success: false,
 
-                error:"Location not found."
+                error:
+                    "Unable to locate the given place."
 
             });
 
@@ -107,9 +116,9 @@ export default async function handler(req, res) {
         const coordinates =
             `${latitude},${longitude}`;
 
-        // ----------------------------
+        // ===========================
         // OAuth Token
-        // ----------------------------
+        // ===========================
 
         const tokenResponse =
             await axios.post(
@@ -118,7 +127,8 @@ export default async function handler(req, res) {
 
                 new URLSearchParams({
 
-                    grant_type:"client_credentials",
+                    grant_type:
+                        "client_credentials",
 
                     client_id:
                         process.env.PROKERALA_CLIENT_ID,
@@ -130,7 +140,7 @@ export default async function handler(req, res) {
 
                 {
 
-                    headers:{
+                    headers: {
 
                         "Content-Type":
                         "application/x-www-form-urlencoded"
@@ -151,9 +161,9 @@ export default async function handler(req, res) {
 
         };
 
-        // ----------------------------
-        // Datetime
-        // ----------------------------
+        // ===========================
+        // Common Parameters
+        // ===========================
 
         const datetime =
             `${dob}T${tob}:00+05:30`;
@@ -164,35 +174,31 @@ export default async function handler(req, res) {
 
             coordinates,
 
-            ayanamsa:1
+            ayanamsa: 1,
+
+            la: "en"
 
         };
 
-        // ----------------------------
-        // All Prokerala Calls
-        // ----------------------------
+        // ===========================
+        // API Calls
+        // ===========================
 
         const [
 
             birthDetails,
 
-            kaalSarp,
-
-            advanced,
-
             birthChart,
 
             navamsaChart,
 
-            planetPositions,
+            planetPosition,
 
-            yogaDetails
+            advanced
 
         ] = await Promise.all([
 
-            // ------------------------
             // Birth Details
-            // ------------------------
 
             axios.get(
 
@@ -202,51 +208,13 @@ export default async function handler(req, res) {
 
                     headers,
 
-                    params:astrologyParams
+                    params: astrologyParams
 
                 }
 
             ),
 
-            // ------------------------
-            // Kaal Sarp
-            // ------------------------
-
-            axios.get(
-
-                "https://api.prokerala.com/v2/astrology/kaal-sarp-dosha",
-
-                {
-
-                    headers,
-
-                    params:astrologyParams
-
-                }
-
-            ),
-
-            // ------------------------
-            // Advanced Kundli
-            // ------------------------
-
-            axios.get(
-
-                "https://api.prokerala.com/v2/astrology/kundli/advanced",
-
-                {
-
-                    headers,
-
-                    params:astrologyParams
-
-                }
-
-            ),
-
-            // ------------------------
-            // Birth Chart (Rasi)
-            // ------------------------
+            // Rasi Chart
 
             axios.get(
 
@@ -256,15 +224,15 @@ export default async function handler(req, res) {
 
                     headers,
 
-                    params:{
+                    params: {
 
                         ...astrologyParams,
 
-                        chart_type:"rasi",
+                        chart_type: "rasi",
 
-                        chart_style:"north-indian",
+                        chart_style: "north-indian",
 
-                        format:"svg"
+                        format: "svg"
 
                     }
 
@@ -272,9 +240,7 @@ export default async function handler(req, res) {
 
             ),
 
-            // ------------------------
             // Navamsa Chart
-            // ------------------------
 
             axios.get(
 
@@ -284,15 +250,15 @@ export default async function handler(req, res) {
 
                     headers,
 
-                    params:{
+                    params: {
 
                         ...astrologyParams,
 
-                        chart_type:"navamsa",
+                        chart_type: "navamsa",
 
-                        chart_style:"north-indian",
+                        chart_style: "north-indian",
 
-                        format:"svg"
+                        format: "svg"
 
                     }
 
@@ -300,9 +266,7 @@ export default async function handler(req, res) {
 
             ),
 
-            // ------------------------
             // Planet Positions
-            // ------------------------
 
             axios.get(
 
@@ -312,25 +276,23 @@ export default async function handler(req, res) {
 
                     headers,
 
-                    params:astrologyParams
+                    params: astrologyParams
 
                 }
 
             ),
 
-            // ------------------------
-            // Yoga Details
-            // ------------------------
+            // Advanced Kundli
 
             axios.get(
 
-                "https://api.prokerala.com/v2/astrology/yoga-details",
+                "https://api.prokerala.com/v2/astrology/kundli/advanced",
 
                 {
 
                     headers,
 
-                    params:astrologyParams
+                    params: astrologyParams
 
                 }
 
@@ -338,37 +300,108 @@ export default async function handler(req, res) {
 
         ]);
 
-        // ============================
+        // ====================================
         // PART 2 STARTS FROM HERE
-        // ============================
-        // ============================
-        // Extract Top Raj Yogas
-        // ============================
+        // ====================================
 
-        let topYogas = [];
 
-        try {
+            // ===========================
+        // Clean Birth Details
+        // ===========================
+
+        const birth =
+            birthDetails.data?.data || {};
+
+        const summary = {
+
+            nakshatra:
+                birth.nakshatra?.name || null,
+
+            pada:
+                birth.nakshatra?.pada || null,
+
+            moonSign:
+                birth.chandra_rasi?.name || null,
+
+            sunSign:
+                birth.soorya_rasi?.name || null,
+
+            zodiac:
+                birth.zodiac?.name || null
+
+        };
+
+        const birthInfo = {
+
+            deity:
+                birth.additional_info?.deity || null,
+
+            ganam:
+                birth.additional_info?.ganam || null,
+
+            symbol:
+                birth.additional_info?.symbol || null,
+
+            animal:
+                birth.additional_info?.animal_sign || null,
+
+            nadi:
+                birth.additional_info?.nadi || null,
+
+            color:
+                birth.additional_info?.color || null,
+
+            direction:
+                birth.additional_info?.best_direction || null,
+
+            syllables:
+                birth.additional_info?.syllables || null,
+
+            birthStone:
+                birth.additional_info?.birth_stone || null,
+
+            planet:
+                birth.additional_info?.planet || null,
+
+            gender:
+                birth.additional_info?.gender || null
+
+        };
+
+        // ===========================
+        // Mangal Dosha
+        // ===========================
+
+        const mangalDosha =
+            advanced.data?.data?.mangal_dosha || {};
+
+        // ===========================
+        // Raj Yogas
+        // ===========================
+
+        let rajYogas = [];
+
+        try{
 
             const yogaGroups =
-                yogaDetails.data?.data || [];
+                advanced.data?.data?.yoga_details || [];
 
-            yogaGroups.forEach(group => {
+            yogaGroups.forEach(group=>{
 
-                (group.yoga_list || []).forEach(yoga => {
+                (group.yoga_list||[]).forEach(yoga=>{
 
-                    if (
+                    if(
                         yoga.has_yoga &&
-                        topYogas.length < 2
-                    ) {
+                        rajYogas.length<2
+                    ){
 
-                        topYogas.push({
+                        rajYogas.push({
 
                             name:
-                                yoga.name || "Unknown Yoga",
+                                yoga.name,
 
                             description:
-                                yoga.description ||
-                                "No description available."
+                                yoga.description
 
                         });
 
@@ -378,57 +411,54 @@ export default async function handler(req, res) {
 
             });
 
-        } catch (e) {
+        }
 
-            console.log(
-                "Unable to parse yoga details."
-            );
+        catch(e){
+
+            rajYogas=[];
 
         }
 
-        // ============================
-        // Clean Birth Details
-        // ============================
-
-        const birth =
-            birthDetails.data?.data || {};
-
-        const additional =
-            birth.additional_info || {};
-
-        // ============================
-        // Clean Advanced Data
-        // ============================
-
-        const advancedData =
-            advanced.data?.data || {};
-
-        // ============================
+        // ===========================
         // Planet Positions
-        // ============================
+        // ===========================
 
         const planets =
-            planetPositions.data?.data || [];
+            planetPosition.data?.data || [];
 
-        // ============================
+        // ===========================
         // Charts
-        // ============================
+        // ===========================
 
-        const rasiChart =
-            birthChart.data || {};
+        const birthChartSVG =
 
-        const navamsa =
-            navamsaChart.data || {};
+            birthChart.data?.data?.svg ||
 
-        // ============================
+            birthChart.data?.svg ||
+
+            birthChart.data ||
+
+            null;
+
+        const navamsaChartSVG =
+
+            navamsaChart.data?.data?.svg ||
+
+            navamsaChart.data?.svg ||
+
+            navamsaChart.data ||
+
+            null;
+
+        // ===========================
         // Final Response
-        // ============================
+        // ===========================
 
         return res.status(200).json({
 
-            success: true,
+            success:true,
 
-            person: {
+            person:{
 
                 name:
                     name || "",
@@ -445,7 +475,7 @@ export default async function handler(req, res) {
 
             },
 
-            location: {
+            location:{
 
                 latitude,
 
@@ -455,63 +485,27 @@ export default async function handler(req, res) {
 
             },
 
-            birthDetails: {
+            summary,
 
-                nakshatra:
-                    birth.nakshatra || {},
+            birthDetails:birthInfo,
 
-                moonSign:
-                    birth.chandra_rasi || {},
+            mangalDosha,
 
-                sunSign:
-                    birth.soorya_rasi || {},
+            rajYogas,
 
-                zodiac:
-                    birth.zodiac || {},
+            planetPositions:planets,
 
-                additional
+            birthChart:birthChartSVG,
 
-            },
-
-            kaalSarp:
-
-                kaalSarp.data?.data || {},
-
-            mangalDosha:
-
-                advancedData.mangal_dosha || {},
-
-            birthChart:
-
-                rasiChart,
-
-            navamsaChart:
-
-                navamsa,
-
-            planets,
-
-            rajYogas:
-
-                topYogas
+            navamsaChart:navamsaChartSVG
 
         });
 
     }
 
-    catch (err) {
+    catch(err){
 
-        console.error(
-
-            "Backend Error:",
-
-            err.response?.data ||
-
-            err.message ||
-
-            err
-
-        );
+        console.error(err);
 
         return res.status(500).json({
 
@@ -523,7 +517,7 @@ export default async function handler(req, res) {
 
                 err.message ||
 
-                "Internal Server Error"
+                "Unknown Error"
 
         });
 

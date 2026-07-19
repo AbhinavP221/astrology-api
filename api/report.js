@@ -418,13 +418,43 @@ export default async function handler(req, res) {
             rajYogas=[];
 
         }
+        // ===========================
+        // House Calculation
+        // ===========================
+        
+        function getHouse(planetSignId, ascSignId) {
+            return ((planetSignId - ascSignId + 12) % 12) + 1;
+        }
 
         // ===========================
         // Planet Positions
         // ===========================
 
+                
+        
         const planets =
-    planetPosition.data?.data?.planet_position || [];
+            planetPosition.data?.data?.planet_position || [];
+        
+        // Find Ascendant
+        const ascendant = planets.find(
+            p => p.name === "Ascendant"
+        );
+        
+        // Calculate House Number
+        if (ascendant) {
+        
+            const ascSignId = ascendant.rasi.id;
+        
+            planets.forEach(planet => {
+        
+                planet.house = getHouse(
+                    planet.rasi.id,
+                    ascSignId
+                );
+        
+            });
+        
+        }
         // ===========================
         // Charts
         // ===========================
